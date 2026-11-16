@@ -37,11 +37,14 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Notificar falha no Discord
+      - name: Notificar falha por Issue e E-mail
         if: failure()
-        uses: sarisia/actions-status-discord@v1
+        uses: actions/github-script@v7
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "Falha no Deploy do Portfólio!"
-          description: "O deploy na branch main quebrou. Verifique a aba Actions imediatamente."
-          color: 0xff0000
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'ALERTA: Falha no Deploy do Portfólio!',
+              body: 'O deploy automático na branch main falhou. Verifique a aba Actions imediatamente.'
+            })
