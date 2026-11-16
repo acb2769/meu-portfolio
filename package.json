@@ -1,0 +1,13 @@
+{
+  "name": "portfolio-devops",
+  "version": "1.0.0",
+  "description": "Portfólio com pipeline CI/CD",
+  "scripts": {
+    "lint": "htmlhint index.html",
+    "check-links": "linkinator index.html"
+  },
+  "devDependencies": {
+    "htmlhint": "^1.1.4",
+    "linkinator": "^6.0.0"
+  }
+}

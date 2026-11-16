@@ -1,0 +1,57 @@
+name: CI - Validacao de Codigo
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  qualidade-e-seguranca:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - name: Baixar codigo do repositorio
+        uses: actions/checkout@v4
+
+      - name: 1. Verificar existencia do index.html na raiz
+        run: |
+          if [ ! -f "index.html" ]; then
+            echo "ERRO: O arquivo index.html nao foi encontrado na raiz!"
+            exit 1
+          fi
+          echo "Sucesso: index.html encontrado."
+
+      - name: Configurar Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Instalar dependencias de validacao
+        run: npm install htmlhint linkinator
+
+      - name: 2. Executar HTML Linter
+        run: npx htmlhint index.html
+
+      - name: 3. Bloquear arquivos maiores que 500KB
+        run: |
+          ARQUIVOS_GRANDES=$(find . -not -path '*/.*' -not -path './node_modules*' -type f -size +500k)
+          if [ -n "$ARQUIVOS_GRANDES" ]; then
+            echo "ERRO: Os seguintes arquivos excedem 500KB:"
+            echo "$ARQUIVOS_GRANDES"
+            exit 1
+          fi
+          echo "Sucesso: Todos os arquivos estao dentro do limite de 500KB."
+
+      - name: 4. Varrer palavras proibidas e comentarios pendentes
+        run: |
+          if grep -rnEi "(TODO|FIXME|senha|password)" --exclude-dir={.git,.github,node_modules} .; then
+            echo "ERRO: Termos proibidos (TODO, FIXME, senha, password) encontrados no codigo!"
+            exit 1
+          fi
+          echo "Sucesso: Codigo limpo de termos sensiveis."
+
+      - name: 5. Validar links externos e caminhos de imagens
+        run: npx linkinator index.html --skip "linkedin.com"
